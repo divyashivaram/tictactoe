@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Coding for Entrepreneurs is doing Try Django</title>
+    {% load static %}
+    <link
+      rel="stylesheet"
+      type="text/css"
+      href="{% static '../static/styles.css' %}"
+    />
+  </head>
+  <body>
+    <table>
+      <h1>Tic Tac Toe</h1>
+      <table>
+        <tr>
+          <td><button class="square" onclick="clickHandler()"></button></td>
+          <td><button class="square"></button></td>
+          <td><button class="square"></button></td>
+        </tr>
+        <tr>
+          <td><button class="square"></button></td>
+          <td><button class="square"></button></td>
+          <td><button class="square"></button></td>
+        </tr>
+        <tr>
+          <td><button class="square"></button></td>
+          <td><button class="square"></button></td>
+          <td><button class="square"></button></td>
+        </tr>
+      </table>
+    </table>
+
+    <script>
+      function clickHandler() {
+        alert("button clicked");
+      }
+    </script>
+  </body>
+</html>
