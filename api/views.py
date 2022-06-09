@@ -1,5 +1,6 @@
 # from http.client import HTTPResponse
 import json
+from venv import create
 from django.conf import settings
 import redis
 from rest_framework.decorators import api_view
@@ -18,17 +19,86 @@ def index(request, *args, **kwargs):
     return render(request, 'board.html', context)
 
 
+@api_view(['POST'])
+def create_or_join_game(request, *args, **kwargs):
+    """
+    accepts username in request body and returns a gameId with response
+    """
+
+    player_name = json.loads(request.body)['username']
+    last_game = get_last_game()
+
+    if last_game is None or last_game['O'] is None:
+        game_id = create_new_game(player_name)
+        # update_game_id_in_storage()
+    else:
+        game_id = redis_instance.get('GameId')
+
+    print("ITEM: ", player_name, 'Game ID: ', game_id)
+
+    # TODO: redirect to game page game_id
+    return Response(status=200)
+
+
 @api_view(['GET'])
-def manage_items(request, *args, **kwargs):
-    items = {}
-    count = 0
-    for key in redis_instance.keys("*"):
-        items[key.decode("utf-8")] = redis_instance.get(key)
-        count += 1
+def get_all_games(request, *args, **kwargs):
+    game_id = redis_instance.get('GameId')
+    games = json.loads(redis_instance.get('Games'))
+
     response = {
-        'count': count,
-        'msg': f"Found {count} items.",
-        'items': items
+        'GameId': game_id,
+        'Games': games[str(int(game_id))]
+    }
+    return Response(response, status=200)
+
+
+@api_view(['POST'])
+def update_moves(request, *args, **kwargs):
+
+    # receive game id, player 'X' or 'O', then index
+    # Get game object
+    # Update moves list and update the game object in redis
+    return
+
+
+def get_last_game():
+    # Could be a part of a class
+    last_game_id = 0
+    if redis_instance.exists('GameId'):
+        last_game_id = redis_instance.get('GameId')
+        return json.loads(redis_instance.get('Games'))[str(int(last_game_id))]
+
+    return None
+
+
+def create_new_game(player_name):
+    # player_name is the first player
+    last_game_id = 0
+    if redis_instance.exists('GameId'):
+        last_game_id = redis_instance.get('GameId')
+    games = json.loads(redis_instance.get('Games'))
+    new_game_id = str(int(last_game_id)+1)
+    new_game = {"X": player_name, "O": None,
+                "moves": ["" for x in range(8)]}
+    games[new_game_id] = new_game
+
+    redis_instance.set('Games', json.dumps(games))
+    redis_instance.set('GameId', new_game_id)
+
+
+@api_view(['GET'])
+def get_items(request, *args, **kwargs):
+    # items = {}
+    # count = 0
+    # for key in redis_instance.keys("*"):
+    # items[key.decode("utf-8")] = redis_instance.get(key)
+    # count += 1
+    gameId = redis_instance.get('GameId')
+    games = json.loads(redis_instance.get('Games'))
+    print(gameId)
+    response = {
+        'GameId': gameId,
+        'Games': games[str(int(gameId))]
     }
     return Response(response, status=200)
 
@@ -38,9 +108,19 @@ def create_item(request, *args, **kwargs):
     item = json.loads(request.body)
     key = list(item.keys())[0]
     value = item[key]
-    redis_instance.set(key, value)
+
+    key = 'Game'
+
+    last_game_id = redis_instance.get('GameId')
+    games = json.loads(redis_instance.get('Games'))
+    games[str(int(last_game_id)+1)] = create_game(
+        'player1', '', ["", "", "", "", "", "", "", "", ""])
+
+    redis_instance.set('Games', json.dumps(games))
+    redis_instance.set('GameId', '1')
+
     response = {
-        'msg': f"{key} successfully set to {value}"
+        'msg': f"{key} successfully set to {games}"
     }
     return Response(response, 201)
 
