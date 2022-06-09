@@ -7,8 +7,6 @@ from .views import create_or_join_game, create_item, get_all_games, manage_item,
 urlpatterns = {
     path('', index, name="index"),
     path('allgames', get_all_games, name="items"),
-    # path('item', create_item, name="item"),
-    # path('items/<slug:key>', manage_item, name="single_item"),
     path('createUser', create_or_join_game, name="createUser")
 }
 
