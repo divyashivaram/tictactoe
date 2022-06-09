@@ -1,6 +1,6 @@
 from django.urls import path
 from rest_framework.urlpatterns import format_suffix_patterns
-from .views import create_or_join_game, create_item, get_all_games, manage_item, index
+from .views import create_or_join_game, get_all_games, index
 
 # Create your views here.
 

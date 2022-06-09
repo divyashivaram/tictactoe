@@ -51,7 +51,11 @@ def get_all_games(request, *args, **kwargs):
 
 @api_view(['POST'])
 def update_moves(request, *args, **kwargs):
-
+    game_id = json.loads(request.body)['gameId']
+    moves = json.loads(request.body)['moves']
+    games = json.loads(redis_instance.get('Games'))
+    game_object = games[str(int(game_id))]
+    game_object['moves'] = moves
     # receive game id, player 'X' or 'O', then index
     # Get game object
     # Update moves list and update the game object in redis
