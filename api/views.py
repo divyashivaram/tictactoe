@@ -42,12 +42,9 @@ def create_or_join_game(request, *args, **kwargs):
 
 @api_view(['GET'])
 def get_all_games(request, *args, **kwargs):
-    game_id = redis_instance.get('GameId')
     games = json.loads(redis_instance.get('Games'))
-
     response = {
-        'GameId': game_id,
-        'Games': games[str(int(game_id))]
+        'Games': games
     }
     return Response(response, status=200)
 
