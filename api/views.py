@@ -15,6 +15,7 @@ redis_instance = redis.StrictRedis(host=settings.REDIS_HOST,
                                    port=settings.REDIS_PORT, db=0)
 
 
+@api_view(['GET'])
 def index(request, *args, **kwargs):
     return render(request, 'landing.html', {})
 
@@ -22,19 +23,17 @@ def index(request, *args, **kwargs):
 @api_view(['POST'])
 def create_or_join_game(request, *args, **kwargs):
     form = NameForm(request.POST)
-    username = form.data['your_name']
-    player_name = username
+    player_name = form.data['your_name']
+
     last_game = get_last_game()
 
     if last_game is None or last_game['O'] is not None:
         game_id = create_new_game(player_name)
         # update_game_id_in_storage()
     else:
-        game_id = redis_instance.get('GameId')
+        game_id = redis_instance.get('GameId').decode("utf-8")
+        add_second_player(player_name, game_id)
 
-    game_id = game_id.decode("utf-8")
-    # add user to 'O'
-    # TODO: redirect to game page game_id
     return redirect('get_game', game_id=game_id)
 
 
@@ -49,10 +48,6 @@ def render_game(request, game_id):
     # except board.DoesNotExist:
     #     raise Http404("Game does not exist")
     return render(request, 'board.html', context)
-
-
-def get_game_object(game_id):
-    return json.loads(redis_instance.get('Games'))[game_id]
 
 
 @api_view(['GET'])
@@ -78,8 +73,14 @@ def update_moves(request, *args, **kwargs):
 
 
 def add_second_player(player_name, game_id):
+    games = json.loads(redis_instance.get('Games'))
+    current_game = games[game_id]
+    current_game['O'] = player_name
+    redis_instance.set('Games', json.dumps(games))
 
-    return
+
+def get_game_object(game_id):
+    return json.loads(redis_instance.get('Games'))[game_id]
 
 
 def get_last_game():
