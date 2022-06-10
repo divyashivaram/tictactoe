@@ -52,7 +52,7 @@ def render_game(request, game_id):
 
 
 def get_game_object(game_id):
-    return json.loads(redis_instance.get('Games'))[game_id.decode("utf-8")]
+    return json.loads(redis_instance.get('Games'))[game_id]
 
 
 @api_view(['GET'])
@@ -87,7 +87,7 @@ def get_last_game():
     last_game_id = 0
     if redis_instance.exists('GameId'):
         last_game_id = redis_instance.get('GameId')
-        return get_game_object(last_game_id)
+        return get_game_object(last_game_id.decode("utf-8"))
 
     return None
 
@@ -97,7 +97,7 @@ def create_new_game(player_name):
     last_game_id = 0
     games = {}
     if redis_instance.exists('GameId'):
-        last_game_id = redis_instance.get('GameId')
+        last_game_id = redis_instance.get('GameId').decode("utf-8")
     if redis_instance.exists('Games'):
         games = json.loads(redis_instance.get('Games'))
     new_game_id = str(int(last_game_id)+1)
