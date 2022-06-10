@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Coding for Entrepreneurs is doing Try Django</title>
+    {% load static %}
+    <link
+      rel="stylesheet"
+      type="text/css"
+      href="{% static '../static/login-page.css' %}"
+    />
+  </head>
+  <body>
+    <h1>Tic Tac Toe</h1>
+    <form id="login-form">
+      <input
+        type="text"
+        name="username"
+        id="username-field"
+        class="login-form-field"
+        placeholder="Username"
+      />
+      <input type="submit" value="Login" id="login-form-submit" />
+    </form>
+  </body>
+</html>
