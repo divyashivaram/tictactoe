@@ -10,16 +10,13 @@ from rest_framework.response import Response
 from django.http import HttpResponseRedirect
 from django.shortcuts import render, redirect
 
-# connect to our Redis instance
+# connect to Redis instance
 redis_instance = redis.StrictRedis(host=settings.REDIS_HOST,
                                    port=settings.REDIS_PORT, db=0)
 
 
 def index(request, *args, **kwargs):
-    context = {'moves': []}
-    form = NameForm(request.POST)
-    print("FORM: ", request)
-    return render(request, 'landing.html', context)
+    return render(request, 'landing.html', {})
 
 
 @api_view(['POST'])
