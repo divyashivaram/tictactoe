@@ -11,15 +11,17 @@
   </head>
   <body>
     <h1>Tic Tac Toe</h1>
-    <form id="login-form">
+
+    <form action="createUser" method="post">
+      {% csrf_token %}
+      <label for="your_name">Your name: </label>
       <input
+        id="your_name"
         type="text"
-        name="username"
-        id="username-field"
-        class="login-form-field"
-        placeholder="Username"
+        name="your_name"
+        value="{{ current_name }}"
       />
-      <input type="submit" value="Login" id="login-form-submit" />
+      <input type="submit" value="Submit" />
     </form>
   </body>
 </html>
