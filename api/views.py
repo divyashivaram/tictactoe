@@ -32,7 +32,7 @@ def create_or_join_game(request, *args, **kwargs):
     else:
         game_id = redis_instance.get('GameId')
 
-    game_id = str(int(game_id))
+    game_id = game_id.decode("utf-8")
     # add user to 'O'
     # TODO: redirect to game page game_id
     return redirect('get_game', game_id=game_id)
@@ -52,7 +52,7 @@ def render_game(request, game_id):
 
 
 def get_game_object(game_id):
-    return json.loads(redis_instance.get('Games'))[str(int(game_id))]
+    return json.loads(redis_instance.get('Games'))[game_id.decode("utf-8")]
 
 
 @api_view(['GET'])
@@ -69,7 +69,7 @@ def update_moves(request, *args, **kwargs):
     game_id = json.loads(request.body)['gameId']
     moves = json.loads(request.body)['moves']
     games = json.loads(redis_instance.get('Games'))
-    game_object = games[str(int(game_id))]
+    game_object = games[game_id.decode("utf-8")]
     game_object['moves'] = moves
     # receive game id, player 'X' or 'O', then index
     # Get game object
