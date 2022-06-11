@@ -53,7 +53,13 @@ def get_key(my_dict, val):
 def render_game(request, *args, **kwargs):
     player_name = str(request.GET.get('player_name', None))
     game = get_game_object(kwargs['game_id'])
-    context = {'game': game, 'player_sign': get_key(game, player_name)}
+
+    # If player name isn't found it means it is not a redirect, throw authorization error or something?
+
+    context = {
+        'game': game,
+        'game_id': kwargs['game_id'],
+        'player_sign': get_key(game, player_name)}
     print('CONTEXT: ', context)
     # TODO: Handle error here. Page does not exist, throw exception etc
     # example:
