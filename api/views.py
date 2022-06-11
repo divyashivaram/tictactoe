@@ -7,8 +7,9 @@ import redis
 from rest_framework.decorators import api_view
 from rest_framework import status
 from rest_framework.response import Response
-from django.http import HttpResponseRedirect
+from django.http import HttpResponseRedirect, JsonResponse
 from django.shortcuts import render, redirect
+from django.urls import reverse
 
 # connect to Redis instance
 redis_instance = redis.StrictRedis(host=settings.REDIS_HOST,
@@ -34,12 +35,26 @@ def create_or_join_game(request, *args, **kwargs):
         game_id = redis_instance.get('GameId').decode("utf-8")
         add_second_player(player_name, game_id)
 
-    return redirect('get_game', game_id=game_id)
+    # redirecting with a query param and an argument. Hence constructing the redirect url right away using 'format'
+    return redirect('{}?player_name={}'.format(reverse('get_game', args=[game_id]), player_name))
+
+
+def get_key(my_dict, val):
+    """
+    Get key from value in dict
+    """
+    for key, value in my_dict.items():
+        if val == value:
+            return key
+    return None
 
 
 @api_view(['GET'])
-def render_game(request, game_id):
-    context = {'moves': get_game_object(game_id)['moves']}
+def render_game(request, *args, **kwargs):
+    player_name = str(request.GET.get('player_name', None))
+    game = get_game_object(kwargs['game_id'])
+    context = {'game': game, 'player_sign': get_key(game, player_name)}
+    print('CONTEXT: ', context)
     # TODO: Handle error here. Page does not exist, throw exception etc
     # example:
     # from django.http import Http404
@@ -48,6 +63,12 @@ def render_game(request, game_id):
     # except board.DoesNotExist:
     #     raise Http404("Game does not exist")
     return render(request, 'board.html', context)
+
+
+@api_view(['GET'])
+def get_moves(request, game_id):
+    # Fetch moves and return
+    return JsonResponse({'gameId': game_id, 'moves': list(range(9))})
 
 
 @api_view(['GET'])
