@@ -1,4 +1,4 @@
-# Trigger-me-not
+# Tic-tac-toe
 
 A two player tictactoe game implemented in Python/Django
 
