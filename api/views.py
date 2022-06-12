@@ -70,23 +70,6 @@ def render_game(request, *args, **kwargs):
     return render(request, 'board.html', context)
 
 
-# """
-# Moves will be a list of list
-# Why
-# To be able to send the diff value alone during polling response
-# (player key and index will be returned)
-# [[1st move], [2nd move]]
-# """
-
-# """
-# TODO:
-# Games logic
-# After every move call checkWinner() and return if this is the winning move
-# If it is the winning move, return in polling result ONLY (winner: X/O)
-# Have an empty winner key in polling response
-
-# """
-
 def get_updated_move(list1, list2):
     """
     two lists of same length
