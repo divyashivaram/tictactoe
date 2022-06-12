@@ -1,4 +1,3 @@
-# from http.client import HTTPResponse
 from .forms import NameForm
 import json
 from venv import create
@@ -7,7 +6,7 @@ import redis
 from rest_framework.decorators import api_view
 from rest_framework import status
 from rest_framework.response import Response
-from django.http import HttpResponseRedirect, JsonResponse
+from django.http import JsonResponse
 from django.shortcuts import render, redirect
 from django.urls import reverse
 

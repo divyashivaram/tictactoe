@@ -59,9 +59,6 @@ function pollForUpdates() {
             type: "GET",
             success: function (data) {
                 var response = JSON.parse(JSON.stringify(data))
-                console.log(response.details)
-                // print(response)
-                // print(typeof(response))
                 if (response['changes'] == true) {
                     updateBoard(response.details.idx, response.details.key)
                 }
