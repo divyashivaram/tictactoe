@@ -1,103 +1,190 @@
 # from http.client import HTTPResponse
+from .forms import NameForm
 import json
+from venv import create
 from django.conf import settings
 import redis
 from rest_framework.decorators import api_view
 from rest_framework import status
 from rest_framework.response import Response
-from django.http import HttpResponse
-from django.shortcuts import render
+from django.http import HttpResponseRedirect, JsonResponse
+from django.shortcuts import render, redirect
+from django.urls import reverse
 
-# connect to our Redis instance
+# connect to Redis instance
 redis_instance = redis.StrictRedis(host=settings.REDIS_HOST,
                                    port=settings.REDIS_PORT, db=0)
 
 
+@api_view(['GET'])
 def index(request, *args, **kwargs):
-    context = {'moves': []}
-    return render(request, 'board.html', context)
+    return render(request, 'landing.html', {})
+
+
+@api_view(['POST'])
+def create_or_join_game(request, *args, **kwargs):
+    form = NameForm(request.POST)
+    player_name = form.data['your_name']
+
+    last_game = get_last_game()
+
+    if last_game is None or last_game['O'] is not None:
+        game_id = create_new_game(player_name)
+        # update_game_id_in_storage()
+    else:
+        game_id = redis_instance.get('GameId').decode("utf-8")
+        add_second_player(player_name, game_id)
+
+    # redirecting with a query param and an argument. Hence constructing the redirect url right away
+    return redirect('{}?player_name={}'.format(reverse('get_game', args=[game_id]), player_name))
+
+
+def get_key(my_dict, val):
+    """
+    Get key from value in dict
+    """
+    for key, value in my_dict.items():
+        if val == value:
+            return key
+    return None
 
 
 @api_view(['GET'])
-def manage_items(request, *args, **kwargs):
-    items = {}
-    count = 0
-    for key in redis_instance.keys("*"):
-        items[key.decode("utf-8")] = redis_instance.get(key)
-        count += 1
+def render_game(request, *args, **kwargs):
+    player_name = str(request.GET.get('player_name', None))
+    game = get_game_object(kwargs['game_id'])
+    print('GAME OBJ: ', type(game))
+
+    # If player name isn't found it means it is not a redirect, throw authorization error or something?
+
+    context = {
+        'game': json.dumps(game),
+        'game_id': kwargs['game_id'],
+        'player_sign': get_key(game, player_name)}
+    print('CONTEXT: ', context)
+    # TODO: Handle error here. Page does not exist, throw exception etc
+    # example:
+    # from django.http import Http404
+    # try:
+    #     board = board.objects.get(pk=game_id)
+    # except board.DoesNotExist:
+    #     raise Http404("Game does not exist")
+    return render(request, 'board.html', context)
+
+
+# """
+# Moves will be a list of list
+# Why
+# To be able to send the diff value alone during polling response
+# (player key and index will be returned)
+# [[1st move], [2nd move]]
+# """
+
+# """
+# TODO:
+# Games logic
+# After every move call checkWinner() and return if this is the winning move
+# If it is the winning move, return in polling result ONLY (winner: X/O)
+# Have an empty winner key in polling response
+
+# """
+
+def get_updated_move(list1, list2):
+    """
+    two lists of same length
+    There can only be one different element
+    Hence early exit
+    List 2 is the latest in this case
+    """
+    for i in range(len(list1)):
+        if list1[i] != list2[i]:
+            return {'key': list1[i], 'idx': i}
+    return None
+
+
+@api_view(['GET'])
+def get_moves(request, game_id):
+    games = json.loads(redis_instance.get('Games'))
+    game = games[str(game_id)]
+    moves = game['moves']
+    updates = None
+    response = {'changes': False, 'details': updates}
+
+    if len(moves) > 1:
+        last_move = moves[-1]
+        prev_move = moves[len(moves)-2]
+        updates = get_updated_move(last_move, prev_move)
+    if updates is not None:
+        response['changes'] = True
+        response['details'] = updates
+    # Fetch moves and game object and return
+    return JsonResponse(response)
+
+
+@api_view(['GET'])
+def get_all_games(request, *args, **kwargs):
+    games = json.loads(redis_instance.get('Games'))
     response = {
-        'count': count,
-        'msg': f"Found {count} items.",
-        'items': items
+        'Games': games
     }
     return Response(response, status=200)
 
 
 @api_view(['POST'])
-def create_item(request, *args, **kwargs):
-    item = json.loads(request.body)
-    key = list(item.keys())[0]
-    value = item[key]
-    redis_instance.set(key, value)
-    response = {
-        'msg': f"{key} successfully set to {value}"
-    }
-    return Response(response, 201)
+def update_moves(request, *args, **kwargs):
+    # if request.method == 'POST':
+    #     game_id = request.POST["gameId"]
+    #     player_key = request.POST["playerKey"]
+    #     index_to_update =
+    print("HELLO UPDATE: ", request.POST)
+    game_id = request.POST['gameId']
+    player_key = request.POST['playerKey']
+    index_to_update = request.POST['index']
+
+    games = json.loads(redis_instance.get('Games'))
+    game = games[game_id]
+    moves_copy = game['moves'][-1].copy()
+    moves_copy[int(index_to_update)] = player_key
+    game['moves'].append(moves_copy)
+    redis_instance.set('Games', json.dumps(games))
+    return Response(status=200)
 
 
-@api_view(['GET', 'PUT', 'DELETE'])
-def manage_item(request, *args, **kwargs):
-    if request.method == 'GET':
-        if kwargs['key']:
-            value = redis_instance.get(kwargs['key'])
-            if value:
-                response = {
-                    'key': kwargs['key'],
-                    'value': value,
-                    'msg': 'success'
-                }
-                return Response(response, status=200)
-            else:
-                response = {
-                    'key': kwargs['key'],
-                    'value': None,
-                    'msg': 'Not found'
-                }
-                return Response(response, status=404)
+def add_second_player(player_name, game_id):
+    games = json.loads(redis_instance.get('Games'))
+    current_game = games[game_id]
+    current_game['O'] = player_name
+    redis_instance.set('Games', json.dumps(games))
 
-    elif request.method == 'PUT':
-        if kwargs['key']:
-            request_data = json.loads(request.body)
-            new_value = request_data['new_value']
-            value = redis_instance.get(kwargs['key'])
-            if value:
-                redis_instance.set(kwargs['key'], new_value)
-                response = {
-                    'key': kwargs['key'],
-                    'value': value,
-                    'msg': f"Successfully updated {kwargs['key']}"
-                }
-                return Response(response, status=200)
-            else:
-                response = {
-                    'key': kwargs['key'],
-                    'value': None,
-                    'msg': 'Not found'
-                }
-                return Response(response, status=404)
 
-    elif request.method == 'DELETE':
-        if kwargs['key']:
-            result = redis_instance.delete(kwargs['key'])
-            if result == 1:
-                response = {
-                    'msg': f"{kwargs['key']} successfully deleted"
-                }
-                return Response(response, status=404)
-            else:
-                response = {
-                    'key': kwargs['key'],
-                    'value': None,
-                    'msg': 'Not found'
-                }
-                return Response(response, status=404)
+def get_game_object(game_id):
+    return json.loads(redis_instance.get('Games'))[game_id]
+
+
+def get_last_game():
+    # Could be a part of a class
+    last_game_id = 0
+    if redis_instance.exists('GameId'):
+        last_game_id = redis_instance.get('GameId')
+        return get_game_object(last_game_id.decode("utf-8"))
+
+    return None
+
+
+def create_new_game(player_name):
+    # player_name is the first player
+    last_game_id = 0
+    games = {}
+    if redis_instance.exists('GameId'):
+        last_game_id = redis_instance.get('GameId').decode("utf-8")
+    if redis_instance.exists('Games'):
+        games = json.loads(redis_instance.get('Games'))
+    new_game_id = str(int(last_game_id)+1)
+    new_game = {"X": player_name, "O": None,
+                "moves": [["" for x in range(9)]]}
+    games[new_game_id] = new_game
+
+    redis_instance.set('Games', json.dumps(games))
+    redis_instance.set('GameId', new_game_id)
+
+    return new_game_id

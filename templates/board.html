@@ -8,33 +8,37 @@
       type="text/css"
       href="{% static '../static/styles.css' %}"
     />
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
   </head>
   <body>
     <table>
       <h1>Tic Tac Toe</h1>
-      <table>
+      <table
+        id="board"
+        data-game="{{game}}"
+        data-player-sign="{{player_sign}}"
+        data-game-id="{{game_id}}"
+      >
         <tr>
-          <td><button class="square" onclick="clickHandler()"></button></td>
-          <td><button class="square"></button></td>
-          <td><button class="square"></button></td>
+          <td>
+            <button id="0" class="square"></button>
+          </td>
+          <td><button id="1" class="square"></button></td>
+          <td><button id="2" class="square"></button></td>
         </tr>
         <tr>
-          <td><button class="square"></button></td>
-          <td><button class="square"></button></td>
-          <td><button class="square"></button></td>
+          <td><button id="3" class="square"></button></td>
+          <td><button id="4" class="square"></button></td>
+          <td><button id="5" class="square"></button></td>
         </tr>
         <tr>
-          <td><button class="square"></button></td>
-          <td><button class="square"></button></td>
-          <td><button class="square"></button></td>
+          <td><button id="6" class="square"></button></td>
+          <td><button id="7" class="square"></button></td>
+          <td><button id="8" class="square"></button></td>
         </tr>
       </table>
     </table>
-
-    <script>
-      function clickHandler() {
-        alert("button clicked");
-      }
-    </script>
+    <script src="{% static 'app.js' %}"></script>
   </body>
 </html>
