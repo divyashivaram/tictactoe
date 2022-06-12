@@ -35,7 +35,7 @@ def create_or_join_game(request, *args, **kwargs):
         game_id = redis_instance.get('GameId').decode("utf-8")
         add_second_player(player_name, game_id)
 
-    # redirecting with a query param and an argument. Hence constructing the redirect url right away using 'format'
+    # redirecting with a query param and an argument. Hence constructing the redirect url right away
     return redirect('{}?player_name={}'.format(reverse('get_game', args=[game_id]), player_name))
 
 
@@ -53,11 +53,12 @@ def get_key(my_dict, val):
 def render_game(request, *args, **kwargs):
     player_name = str(request.GET.get('player_name', None))
     game = get_game_object(kwargs['game_id'])
+    print('GAME OBJ: ', type(game))
 
     # If player name isn't found it means it is not a redirect, throw authorization error or something?
 
     context = {
-        'game': game,
+        'game': json.dumps(game),
         'game_id': kwargs['game_id'],
         'player_sign': get_key(game, player_name)}
     print('CONTEXT: ', context)
@@ -71,10 +72,53 @@ def render_game(request, *args, **kwargs):
     return render(request, 'board.html', context)
 
 
+# """
+# Moves will be a list of list
+# Why
+# To be able to send the diff value alone during polling response
+# (player key and index will be returned)
+# [[1st move], [2nd move]]
+# """
+
+# """
+# TODO:
+# Games logic
+# After every move call checkWinner() and return if this is the winning move
+# If it is the winning move, return in polling result ONLY (winner: X/O)
+# Have an empty winner key in polling response
+
+# """
+
+def get_updated_move(list1, list2):
+    """
+    two lists of same length
+    There can only be one different element
+    Hence early exit
+    List 2 is the latest in this case
+    """
+    for i in range(len(list1)):
+        if list1[i] != list2[i]:
+            return {'key': list1[i], 'idx': i}
+    return None
+
+
 @api_view(['GET'])
 def get_moves(request, game_id):
+    games = json.loads(redis_instance.get('Games'))
+    game = games[str(game_id)]
+    moves = game['moves']
+    updates = None
+    response = {'changes': False, 'details': updates}
+
+    if len(moves) > 1:
+        last_move = moves[-1]
+        prev_move = moves[len(moves)-2]
+        updates = get_updated_move(last_move, prev_move)
+    if updates is not None:
+        response['changes'] = True
+        response['details'] = updates
     # Fetch moves and game object and return
-    return JsonResponse({'gameId': game_id, 'moves': list(range(9))})
+    return JsonResponse(response)
 
 
 @api_view(['GET'])
@@ -88,14 +132,20 @@ def get_all_games(request, *args, **kwargs):
 
 @api_view(['POST'])
 def update_moves(request, *args, **kwargs):
-    game_id = json.loads(request.body)['gameId']
-    player_key = json.loads(request.body)['player_key']
-    index_to_update = json.loads(request.body)['index']
+    # if request.method == 'POST':
+    #     game_id = request.POST["gameId"]
+    #     player_key = request.POST["playerKey"]
+    #     index_to_update =
+    print("HELLO UPDATE: ", request.POST)
+    game_id = request.POST['gameId']
+    player_key = request.POST['playerKey']
+    index_to_update = request.POST['index']
 
     games = json.loads(redis_instance.get('Games'))
     game = games[game_id]
-    moves = game['moves']
-    moves[int(index_to_update)] = player_key
+    moves_copy = game['moves'][-1].copy()
+    moves_copy[int(index_to_update)] = player_key
+    game['moves'].append(moves_copy)
     redis_instance.set('Games', json.dumps(games))
     return Response(status=200)
 
@@ -131,7 +181,7 @@ def create_new_game(player_name):
         games = json.loads(redis_instance.get('Games'))
     new_game_id = str(int(last_game_id)+1)
     new_game = {"X": player_name, "O": None,
-                "moves": ["" for x in range(8)]}
+                "moves": [["" for x in range(9)]]}
     games[new_game_id] = new_game
 
     redis_instance.set('Games', json.dumps(games))
