@@ -2,7 +2,6 @@ from django.urls import path
 from rest_framework.urlpatterns import format_suffix_patterns
 from .views import create_or_join_game, render_game, get_all_games, index, get_moves, update_moves
 
-# Create your views here.
 
 urlpatterns = {
     path('', index, name="index"),

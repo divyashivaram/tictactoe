@@ -15,7 +15,6 @@ function clickHandler(gameId) {
 }
 
 function updateBoard(id, key) {
-
     $('#' + id).html(key)
 }
 
@@ -23,11 +22,6 @@ function updateBoard(id, key) {
 // Update winner and loser states based on player key and username
 
 function updateMoves(gameId, playerKey, index) {
-
-    // Not necessary to update moves list
-    // Instead send index and the player key (X or O) to the backend
-    // ["X", "", "O", "", "", ""]
-
     $.ajax({
         url: "http://127.0.0.1:8000/api/updateMoves",
         type: "POST",
@@ -64,9 +58,12 @@ function pollForUpdates() {
             url: "http://127.0.0.1:8000/api/getmoves/" + gameId,
             type: "GET",
             success: function (data) {
-                var response = JSON.stringify(data);
-                if (response['changes']) {
-                    updateBoard(response['details'][idx], response['details'][key])
+                var response = JSON.parse(JSON.stringify(data))
+                console.log(response.details)
+                // print(response)
+                // print(typeof(response))
+                if (response['changes'] == true) {
+                    updateBoard(response.details.idx, response.details.key)
                 }
             },
         });
@@ -79,10 +76,6 @@ function pollForUpdates() {
 
 // Get element by id and update the value
 // ('#0').attr('value', 'X')
-
-
-
-
 
 // function ajaxReq() {
 //     setInterval(function () {
