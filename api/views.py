@@ -52,7 +52,6 @@ def get_key(my_dict, val):
 def render_game(request, *args, **kwargs):
     player_name = str(request.GET.get('player_name', None))
     game = get_game_object(kwargs['game_id'])
-    print('GAME OBJ: ', type(game))
 
     # If player name isn't found it means it is not a redirect, throw authorization error or something?
 
@@ -60,7 +59,7 @@ def render_game(request, *args, **kwargs):
         'game': json.dumps(game),
         'game_id': kwargs['game_id'],
         'player_sign': get_key(game, player_name)}
-    print('CONTEXT: ', context)
+
     # TODO: Handle error here. Page does not exist, throw exception etc
     # example:
     # from django.http import Http404
@@ -108,7 +107,7 @@ def get_moves(request, game_id):
     moves = game['moves']
     updates = None
     response = {'changes': False, 'details': updates,
-                'mostRecentMove': moves[-1]}
+                'mostRecentMove': moves[-1], 'winner': None}
 
     if len(moves) > 1:
         last_move = moves[-1]
@@ -117,6 +116,9 @@ def get_moves(request, game_id):
     if updates is not None:
         response['changes'] = True
         response['details'] = updates
+        winner = calculate_winner(moves[-1])
+        if winner is not None:
+            response['winner'] = winner
     # Fetch moves and game object and return
     return JsonResponse(response)
 
@@ -132,11 +134,6 @@ def get_all_games(request, *args, **kwargs):
 
 @api_view(['POST'])
 def update_moves(request, *args, **kwargs):
-    # if request.method == 'POST':
-    #     game_id = request.POST["gameId"]
-    #     player_key = request.POST["playerKey"]
-    #     index_to_update =
-    print("HELLO UPDATE: ", request.POST)
     game_id = request.POST['gameId']
     player_key = request.POST['playerKey']
     index_to_update = request.POST['index']
@@ -188,3 +185,23 @@ def create_new_game(player_name):
     redis_instance.set('GameId', new_game_id)
 
     return new_game_id
+
+
+def calculate_winner(latest_move):
+    winning_moves = [
+        [0, 1, 2],
+        [3, 4, 5],
+        [6, 7, 8],
+        [0, 3, 6],
+        [1, 4, 7],
+        [2, 5, 8],
+        [0, 4, 8],
+        [2, 4, 6],
+    ]
+
+    for row in winning_moves:
+        [a, b, c] = row
+        if (latest_move[a] and latest_move[a] == latest_move[b] and latest_move[b] == latest_move[c]):
+            return latest_move[a]
+
+    return None

@@ -7,15 +7,15 @@ function renderBoard(currentMoves) {
     }
 }
 
-function clickHandler(gameId) {
-    $.ajax({
-        url: "http://127.0.0.1:8000/api/getmoves/" + gameId,
-        type: "GET",
-        success: function (data) {
-            var x = JSON.stringify(data);
-        },
-    });
-}
+// function clickHandler(gameId) {
+//     $.ajax({
+//         url: "http://127.0.0.1:8000/api/getmoves/" + gameId,
+//         type: "GET",
+//         success: function (data) {
+//             var x = JSON.stringify(data);
+//         },
+//     });
+// }
 
 function updateBoard(id, key) {
     $('#' + id).html(key)
@@ -93,6 +93,10 @@ function pollForUpdates() {
                     updateBoard(response.details.idx, lastPlayedKey)
                     disableSquare(response.details.idx)
                     enableMoves(lastPlayedKey, currentPlayerKey, response.mostRecentMove)
+                    console.log('Winner', response.winner)
+                    if (response.winner) {
+                        disableAllSquares()
+                    }
                 }
             },
         });
