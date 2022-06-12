@@ -14,16 +14,15 @@
   <body>
     <table>
       <h1>Tic Tac Toe</h1>
-      <h1 id="12">HELLO</h1>
-      <table>
+      <table
+        id="board"
+        data-game="{{game}}"
+        data-player-sign="{{player_sign}}"
+        data-game-id="{{game_id}}"
+      >
         <tr>
           <td>
-            <button
-              id="0"
-              class="square"
-              data-game="{{game}}"
-              data-player-sign="{{player_sign}}}"
-            ></button>
+            <button id="0" class="square"></button>
           </td>
           <td><button id="1" class="square"></button></td>
           <td><button id="2" class="square"></button></td>
