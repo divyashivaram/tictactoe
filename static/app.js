@@ -1,6 +1,9 @@
 function renderBoard(currentMoves) {
     for (let i = 0; i < currentMoves.length; i++) {
         updateBoard(i, currentMoves[i])
+        if (currentMoves[i]) {
+            disableSquare(i)
+        }
     }
 }
 
@@ -16,6 +19,11 @@ function clickHandler(gameId) {
 
 function updateBoard(id, key) {
     $('#' + id).html(key)
+}
+
+function disableSquare(id) {
+    // $(this).prop('disabled', true);
+    $('#' + id).prop('disabled', true);
 }
 
 // Look for winning move in polling response
@@ -41,6 +49,8 @@ $(document).ready(function () {
     renderBoard(moves[moves.length - 1])
 
     $(".square").click(function () {
+        disableSquare(this.id)
+        $(this).prop('disabled', true);
         playerKey = $("#board").attr("data-player-sign")
         index = this.id
         updateBoard(index, playerKey)
