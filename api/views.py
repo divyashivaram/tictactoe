@@ -73,7 +73,7 @@ def render_game(request, *args, **kwargs):
 
 @api_view(['GET'])
 def get_moves(request, game_id):
-    # Fetch moves and return
+    # Fetch moves and game object and return
     return JsonResponse({'gameId': game_id, 'moves': list(range(9))})
 
 
@@ -89,14 +89,15 @@ def get_all_games(request, *args, **kwargs):
 @api_view(['POST'])
 def update_moves(request, *args, **kwargs):
     game_id = json.loads(request.body)['gameId']
-    moves = json.loads(request.body)['moves']
+    player_key = json.loads(request.body)['player_key']
+    index_to_update = json.loads(request.body)['index']
+
     games = json.loads(redis_instance.get('Games'))
-    game_object = games[game_id.decode("utf-8")]
-    game_object['moves'] = moves
-    # receive game id, player 'X' or 'O', then index
-    # Get game object
-    # Update moves list and update the game object in redis
-    return
+    game = games[game_id]
+    moves = game['moves']
+    moves[int(index_to_update)] = player_key
+    redis_instance.set('Games', json.dumps(games))
+    return Response(status=200)
 
 
 def add_second_player(player_name, game_id):
