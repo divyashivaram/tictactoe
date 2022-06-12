@@ -22,8 +22,15 @@ function updateBoard(id, key) {
 }
 
 function disableSquare(id) {
-    // $(this).prop('disabled', true);
     $('#' + id).prop('disabled', true);
+}
+
+function disableAllSquares() {
+    $(".square").prop('disabled', true)
+}
+
+function enableSquare(id) {
+    $('#' + id).prop('disabled', false);
 }
 
 // Look for winning move in polling response
@@ -49,7 +56,7 @@ $(document).ready(function () {
     renderBoard(moves[moves.length - 1])
 
     $(".square").click(function () {
-        disableSquare(this.id)
+        disableAllSquares()
         $(this).prop('disabled', true);
         playerKey = $("#board").attr("data-player-sign")
         index = this.id
@@ -60,8 +67,20 @@ $(document).ready(function () {
 })
 
 
+function enableMoves(lastPlayedKey, currentPlayerKey, moves) {
+    if (lastPlayedKey !== currentPlayerKey) {
+        for (let i = 0; i <= moves.length; i++) {
+            if (moves[i] === "") {
+                enableSquare(i)
+            }
+        }
+    }
+}
+
 function pollForUpdates() {
     gameId = $("#board").attr("data-game-id")
+    currentPlayerKey = $("#board").attr("data-player-sign")
+
 
     setInterval(function () {
         $.ajax({
@@ -70,7 +89,10 @@ function pollForUpdates() {
             success: function (data) {
                 var response = JSON.parse(JSON.stringify(data))
                 if (response['changes'] == true) {
-                    updateBoard(response.details.idx, response.details.key)
+                    lastPlayedKey = response.details.key
+                    updateBoard(response.details.idx, lastPlayedKey)
+                    disableSquare(response.details.idx)
+                    enableMoves(lastPlayedKey, currentPlayerKey, response.mostRecentMove)
                 }
             },
         });

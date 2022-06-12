@@ -107,7 +107,8 @@ def get_moves(request, game_id):
     game = games[str(game_id)]
     moves = game['moves']
     updates = None
-    response = {'changes': False, 'details': updates}
+    response = {'changes': False, 'details': updates,
+                'mostRecentMove': moves[-1]}
 
     if len(moves) > 1:
         last_move = moves[-1]
