@@ -5,11 +5,12 @@ from .views import create_or_join_game, render_game, get_all_games, index, get_m
 
 urlpatterns = {
     path('', index, name="index"),
-    path('allgames', get_all_games, name="items"),
-    path(r'games/<slug:game_id>', render_game, name="get_game"),
+    # TODO: Call this join_game and not createUser
+    # TODO: Mixed cases here in names. Refactor
     path('createUser', create_or_join_game, name="createUser"),
-    path('getmoves/<slug:game_id>', get_moves, name="getMoves"),
+    path(r'games/<slug:game_id>', render_game, name="get_game"),
     path('updateMoves', update_moves, name="updateMoves"),
+    path('getmoves/<slug:game_id>', get_moves, name="getMoves"),
 }
 
 urlpatterns = format_suffix_patterns(urlpatterns)
