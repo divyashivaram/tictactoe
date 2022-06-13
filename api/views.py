@@ -36,23 +36,6 @@ def create_or_join_game(request, *args, **kwargs):
     return redirect('{}?player_name={}'.format(reverse('get_game', args=[game_id]), player_name))
 
 
-def get_key(dict, val):
-    """get_key
-
-    Args:
-        dict (_dict_): python dictionary
-        val (_any_): value to look up
-
-    Returns:
-        _any_: returns the respective key or None
-    """
-
-    for key, value in dict.items():
-        if val == value:
-            return key
-    return None
-
-
 @api_view(['GET'])
 def render_game(request, *args, **kwargs):
     player_name = str(request.GET.get('player_name', None))
@@ -75,16 +58,20 @@ def render_game(request, *args, **kwargs):
     return render(request, 'board.html', context)
 
 
-def get_updated_move(list1, list2):
+def get_key(dict, val):
+    """get_key
+
+    Args:
+        dict (_dict_): python dictionary
+        val (_any_): value to look up
+
+    Returns:
+        _any_: returns the respective key or None
     """
-    two lists of same length
-    There can only be one different element
-    Hence early exit
-    List 2 is the latest in this case
-    """
-    for i in range(len(list1)):
-        if list1[i] != list2[i]:
-            return {'key': list1[i], 'idx': i}
+
+    for key, value in dict.items():
+        if val == value:
+            return key
     return None
 
 
@@ -133,6 +120,19 @@ def update_moves(request, *args, **kwargs):
     game['moves'].append(moves_copy)
     redis.write('Games', json.dumps(games))
     return Response(status=200)
+
+
+def get_updated_move(list1, list2):
+    """
+    two lists of same length
+    There can only be one different element
+    Hence early exit
+    List 2 is the latest in this case
+    """
+    for i in range(len(list1)):
+        if list1[i] != list2[i]:
+            return {'key': list1[i], 'idx': i}
+    return None
 
 
 def add_second_player(player_name, game_id):
