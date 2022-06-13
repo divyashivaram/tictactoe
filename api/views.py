@@ -1,18 +1,17 @@
 from .forms import NameForm
 import json
-from venv import create
-from django.conf import settings
+# from venv import create
+# from django.conf import settings
 import redis
 from rest_framework.decorators import api_view
-from rest_framework import status
+# from rest_framework import status
 from rest_framework.response import Response
 from django.http import JsonResponse
 from django.shortcuts import render, redirect
 from django.urls import reverse
+from .models import Redis
 
-# connect to Redis instance
-redis_instance = redis.StrictRedis(host=settings.REDIS_HOST,
-                                   port=settings.REDIS_PORT, db=0)
+redis = Redis()
 
 
 @api_view(['GET'])
@@ -29,20 +28,26 @@ def create_or_join_game(request, *args, **kwargs):
 
     if last_game is None or last_game['O'] is not None:
         game_id = create_new_game(player_name)
-        # update_game_id_in_storage()
     else:
-        game_id = redis_instance.get('GameId').decode("utf-8")
+        game_id = redis.read('GameId').decode("utf-8")
         add_second_player(player_name, game_id)
 
     # redirecting with a query param and an argument. Hence constructing the redirect url right away
     return redirect('{}?player_name={}'.format(reverse('get_game', args=[game_id]), player_name))
 
 
-def get_key(my_dict, val):
+def get_key(dict, val):
+    """get_key
+
+    Args:
+        dict (_dict_): python dictionary
+        val (_any_): value to look up
+
+    Returns:
+        _any_: returns the respective key or None
     """
-    Get key from value in dict
-    """
-    for key, value in my_dict.items():
+
+    for key, value in dict.items():
         if val == value:
             return key
     return None
@@ -85,7 +90,7 @@ def get_updated_move(list1, list2):
 
 @api_view(['GET'])
 def get_moves(request, game_id):
-    games = json.loads(redis_instance.get('Games'))
+    games = json.loads(redis.read('Games'))
     game = games[str(game_id)]
     moves = game['moves']
     updates = None
@@ -108,7 +113,7 @@ def get_moves(request, game_id):
 
 @api_view(['GET'])
 def get_all_games(request, *args, **kwargs):
-    games = json.loads(redis_instance.get('Games'))
+    games = json.loads(redis.read('Games'))
     response = {
         'Games': games
     }
@@ -121,31 +126,31 @@ def update_moves(request, *args, **kwargs):
     player_key = request.POST['playerKey']
     index_to_update = request.POST['index']
 
-    games = json.loads(redis_instance.get('Games'))
+    games = json.loads(redis.read('Games'))
     game = games[game_id]
     moves_copy = game['moves'][-1].copy()
     moves_copy[int(index_to_update)] = player_key
     game['moves'].append(moves_copy)
-    redis_instance.set('Games', json.dumps(games))
+    redis.write('Games', json.dumps(games))
     return Response(status=200)
 
 
 def add_second_player(player_name, game_id):
-    games = json.loads(redis_instance.get('Games'))
+    games = json.loads(redis.read('Games'))
     current_game = games[game_id]
     current_game['O'] = player_name
-    redis_instance.set('Games', json.dumps(games))
+    redis.write('Games', json.dumps(games))
 
 
 def get_game_object(game_id):
-    return json.loads(redis_instance.get('Games'))[game_id]
+    return json.loads(redis.read('Games'))[game_id]
 
 
 def get_last_game():
     # Could be a part of a class
     last_game_id = 0
-    if redis_instance.exists('GameId'):
-        last_game_id = redis_instance.get('GameId')
+    if redis.peek('GameId'):
+        last_game_id = redis.read('GameId')
         return get_game_object(last_game_id.decode("utf-8"))
 
     return None
@@ -155,17 +160,17 @@ def create_new_game(player_name):
     # player_name is the first player
     last_game_id = 0
     games = {}
-    if redis_instance.exists('GameId'):
-        last_game_id = redis_instance.get('GameId').decode("utf-8")
-    if redis_instance.exists('Games'):
-        games = json.loads(redis_instance.get('Games'))
+    if redis.peek('GameId'):
+        last_game_id = redis.read('GameId').decode("utf-8")
+    if redis.peek('Games'):
+        games = json.loads(redis.read('Games'))
     new_game_id = str(int(last_game_id)+1)
     new_game = {"X": player_name, "O": None,
                 "moves": [["" for x in range(9)]]}
     games[new_game_id] = new_game
 
-    redis_instance.set('Games', json.dumps(games))
-    redis_instance.set('GameId', new_game_id)
+    redis.write('Games', json.dumps(games))
+    redis.write('GameId', new_game_id)
 
     return new_game_id
 

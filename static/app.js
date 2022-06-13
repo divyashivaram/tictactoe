@@ -23,7 +23,6 @@ function enableSquare(id) {
     $('#' + id).prop('disabled', false);
 }
 
-
 function updateMoves(gameId, playerKey, index) {
     $.ajax({
         url: "http://127.0.0.1:8000/api/updateMoves",
@@ -35,25 +34,6 @@ function updateMoves(gameId, playerKey, index) {
         },
     });
 }
-
-$(document).ready(function () {
-    gameId = $("#board").attr("data-game-id")
-    gameObject = $("#board").attr("data-game")
-    moves = JSON.parse(gameObject).moves
-
-    renderBoard(moves[moves.length - 1])
-
-    $(".square").click(function () {
-        disableAllSquares()
-        $(this).prop('disabled', true);
-        playerKey = $("#board").attr("data-player-sign")
-        index = this.id
-        updateBoard(index, playerKey)
-        updateMoves(gameId, playerKey, index)
-    });
-    pollForUpdates(gameId)
-})
-
 
 function enableMoves(lastPlayedKey, currentPlayerKey, moves) {
     if (lastPlayedKey !== currentPlayerKey) {
@@ -68,7 +48,6 @@ function enableMoves(lastPlayedKey, currentPlayerKey, moves) {
 function pollForUpdates() {
     gameId = $("#board").attr("data-game-id")
     currentPlayerKey = $("#board").attr("data-player-sign")
-
 
     setInterval(function () {
         $.ajax({
@@ -90,3 +69,21 @@ function pollForUpdates() {
         });
     }, 2000);
 }
+
+$(document).ready(function () {
+    gameId = $("#board").attr("data-game-id")
+    gameObject = $("#board").attr("data-game")
+    moves = JSON.parse(gameObject).moves
+
+    renderBoard(moves[moves.length - 1])
+
+    $(".square").click(function () {
+        disableAllSquares()
+        $(this).prop('disabled', true);
+        playerKey = $("#board").attr("data-player-sign")
+        index = this.id
+        updateBoard(index, playerKey)
+        updateMoves(gameId, playerKey, index)
+    });
+    pollForUpdates(gameId)
+})
