@@ -1,3 +1,21 @@
+$(document).ready(function () {
+    gameId = $("#board").attr("data-game-id")
+    gameObject = $("#board").attr("data-game")
+    moves = JSON.parse(gameObject).moves
+
+    renderBoard(moves[moves.length - 1])
+
+    $(".square").click(function () {
+        disableAllSquares()
+        $(this).prop('disabled', true);
+        playerKey = $("#board").attr("data-player-sign")
+        index = this.id
+        updateBoard(index, playerKey)
+        updateMoves(gameId, playerKey, index)
+    });
+    pollForUpdates(gameId)
+})
+
 function renderBoard(currentMoves) {
     for (let i = 0; i < currentMoves.length; i++) {
         updateBoard(i, currentMoves[i])
@@ -70,20 +88,4 @@ function pollForUpdates() {
     }, 2000);
 }
 
-$(document).ready(function () {
-    gameId = $("#board").attr("data-game-id")
-    gameObject = $("#board").attr("data-game")
-    moves = JSON.parse(gameObject).moves
 
-    renderBoard(moves[moves.length - 1])
-
-    $(".square").click(function () {
-        disableAllSquares()
-        $(this).prop('disabled', true);
-        playerKey = $("#board").attr("data-player-sign")
-        index = this.id
-        updateBoard(index, playerKey)
-        updateMoves(gameId, playerKey, index)
-    });
-    pollForUpdates(gameId)
-})

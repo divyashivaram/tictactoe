@@ -13,10 +13,12 @@ from .services import *
 def index(request, *args, **kwargs):
     return render(request, 'landing.html', {})
 
+# TODO: Move all business logic to services.py
+
 
 @api_view(['POST'])
 def create_or_join_game(request, *args, **kwargs):
-    # TODO: Call this join game
+    # TODO: Call this 'join game'
     # TODO: Now call create or join game in services.py that logic should not be here
 
     # Potential bug:
@@ -63,8 +65,9 @@ def render_game(request, *args, **kwargs):
 
 @api_view(['GET'])
 def get_moves(request, game_id):
-    # TODO: Mopve all the logic to services.py
+    # TODO: games does not exist until the first player joins game. Handle this exception (corner case)
     games = json.loads(redis.read('Games'))
+
     game = games[str(game_id)]
     moves = game['moves']
     updates = None
@@ -96,6 +99,7 @@ def get_all_games(request, *args, **kwargs):
 
 @api_view(['POST'])
 def update_moves(request, *args, **kwargs):
+
     game_id = request.POST['gameId']
     player_key = request.POST['playerKey']
     index_to_update = request.POST['index']
@@ -107,3 +111,17 @@ def update_moves(request, *args, **kwargs):
     game['moves'].append(moves_copy)
     redis.write('Games', json.dumps(games))
     return Response(status=200)
+
+    """
+    Schema:
+    
+    games: {
+        gameId: {'X': player1
+        'O': player2,
+        moves: [['', '', 'X', '', ''], ['', '', 'X', '', 'O']..]}
+    .
+    .
+    }
+    
+    gameId: gameId
+    """
